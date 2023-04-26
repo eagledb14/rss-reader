@@ -1,6 +1,7 @@
 use rss::Item;
 use chrono::DateTime;
 use serde::{Serialize, Deserialize};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 #[allow(dead_code)]
 #[derive(Serialize, Deserialize, Clone)]
@@ -32,7 +33,8 @@ impl Site {
           match DateTime::parse_from_rfc2822(e) {
             Ok(dt) => dt.timestamp_millis(),
             Err(_) => {
-              0
+              let now = SystemTime::now().duration_since(UNIX_EPOCH).expect("time went backwards");
+              now.as_millis() as i64
             }
           }
         },
