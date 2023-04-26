@@ -1,0 +1,12 @@
+[package]
+name = "shared"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "shared"
+crate-type = ["lib"]
+
+[dependencies]
+rss = "2.0.3"
+
