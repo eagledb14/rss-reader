@@ -46,7 +46,6 @@ async fn update_readers(data: web::Data<PageData>) -> impl Responder {
   let pages = fs::read_to_string("site_list").unwrap();
   let rss_pages:Vec<&str> = pages.lines().collect();
 
-  //let mut sites = Vec::<Site>::new();
   let mut sites = data.pages.write().unwrap();
   sites.clear();
 
@@ -56,7 +55,8 @@ async fn update_readers(data: web::Data<PageData>) -> impl Responder {
       Ok(mut e) => sites.append(&mut e),
     }
   }
-  println!("{}", sites.len());
+  //println!("{}", sites.len());
+  sites.sort_by_key(|item| std::cmp::Reverse(item.date));
 
   HttpResponse::Ok().body("updated")
 }
@@ -86,7 +86,7 @@ async fn auto_update_read_pages(ip: (&str, u16)) {
   let mut interval: Interval = interval(Duration::from_secs(3600));
   let client = Client::new();
   let url = format!("http://{}:{}/readers", ip.0, ip.1);
-  println!("{}", url);
+
   loop {
     interval.tick().await;
     let _result = client.post(url.clone()).send().await;
