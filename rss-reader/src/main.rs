@@ -55,7 +55,7 @@ async fn update_readers(data: web::Data<PageData>) -> impl Responder {
       Ok(mut e) => sites.append(&mut e),
     }
   }
-  //println!("{}", sites.len());
+  println!("{}", sites.len());
   sites.sort_by_key(|item| std::cmp::Reverse(item.date));
 
   HttpResponse::Ok().body("updated")
