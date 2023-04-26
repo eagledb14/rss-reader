@@ -1,11 +1,11 @@
 use std::fs;
 use rss::Channel;
 use shared::Site;
-
+use std::error::Error;
 
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> Result<(), Box<dyn Error>> {
   let pages = fs::read_to_string("site_list")?;
   let rss_pages:Vec<&str> = pages.lines().collect();
   
@@ -27,7 +27,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 
-async fn get_readers(pages: &str) -> Result<Vec<Site>, Box<dyn std::error::Error>> {
+async fn get_readers(pages: &str) -> Result<Vec<Site>, Box<dyn Error>> {
   let content = reqwest::get(pages).await?.bytes().await?;
   let channel = Channel::read_from(&content[..])?;
 
