@@ -58,14 +58,14 @@ impl Site {
     let mut entry = format!(r##"
       <div class="entry">
         <h3>
-          <a href="{}" target = "_blank">{}</a>
+          <a href="{}">{}</a>
         </h3>
         <p class="time">{}</p>
         <p>{}</p> 
     "##, link, title, date, description);
 
     if comments != "" {
-      entry = format!(r##"{} <a href="{}" target = "_blank">Comments</a>"##, entry, comments);
+      entry = format!(r##"{} <a href="{}">Comments</a>"##, entry, comments);
     }
     entry = format!(r##"{}</div>"##, entry);
 
