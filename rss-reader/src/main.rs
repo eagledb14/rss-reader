@@ -1,6 +1,8 @@
+mod site;
+
 use std::fs;
 use rss::Channel;
-use shared::Site;
+use site::Site;
 use std::error::Error;
 use actix_web::{get, post, web, App, HttpServer, HttpResponse, Responder};
 use std::sync::RwLock;
@@ -12,6 +14,9 @@ use reqwest::Client;
 struct PageData {
   pages: RwLock<Vec<Site>>
 }
+
+static OPENER: &str = r##"<!DOCKTYPE html><html><script src="https://unpkg.com/htmx.org@1.9.2" integrity="sha384-L6OqL9pRWyyFU3+/bjdSri+iIphTN/bvYyM37tICVyOJkWZLpP2vGn6VUEXgzg6h" crossorigin="anonymous"></script><script src="https://unpkg.com/htmx.org@1.9.2" "></script><body>"##;
+static CLOSER: &str = r##"</body></html>"##;
 
 //#[actix_web::main]
 #[tokio::main]
@@ -27,6 +32,7 @@ async fn main() -> std::io::Result<()> {
   HttpServer::new(move || {
     App::new()
       .app_data(data.clone())
+      .service(index)
       .service(greet)
       .service(update_readers)
       .service(get_readers)
@@ -41,7 +47,23 @@ async fn greet(name: web::Path<String>) -> impl Responder {
   format!("Hello {name}!")
 }
 
-#[post("/readers")]
+#[get("/")]
+async fn index(data: web::Data<PageData>) -> impl Responder {
+  let page_lock = data.pages.read().unwrap();
+
+  let pages = page(&page_lock, 0, 10).await;
+  let body = format!(r##"{}
+  <body>
+  {}
+  </body>
+  {}"##, OPENER, pages, CLOSER);
+
+  HttpResponse::Ok()
+    .content_type("text/html; charset=utf-8")
+    .body(body)
+}
+
+#[post("/r")]
 async fn update_readers(data: web::Data<PageData>) -> impl Responder {
   let pages = fs::read_to_string("site_list").unwrap();
   let rss_pages:Vec<&str> = pages.lines().collect();
@@ -51,12 +73,13 @@ async fn update_readers(data: web::Data<PageData>) -> impl Responder {
 
   for page in rss_pages {
     match get_read_pages(&page).await {
-      Err(_) => (),
       Ok(mut e) => sites.append(&mut e),
+      Err(_) => (),
     }
   }
-  println!("{}", sites.len());
+  //println!("{}", sites.len());
   sites.sort_by_key(|item| std::cmp::Reverse(item.date));
+  //print!("updated: {:?}", sites); 
 
   HttpResponse::Ok().body("updated")
 }
@@ -73,13 +96,27 @@ async fn get_read_pages(pages: &str) -> Result<Vec<Site>, Box<dyn Error>> {
   return Ok(sites);
 }
 
-#[get("/readers")]
-async fn get_readers(data: web::Data<PageData>) -> impl Responder {
+#[get("/r/{page_num}")]
+async fn get_readers(data: web::Data<PageData>, page_num: web::Path<usize>) -> impl Responder {
   let page_lock = data.pages.read().unwrap();
-  let page_clone = page_lock.clone();
+
+  //ok I have no idea what will happen if the sites list is smaller than 10, honeslty paging will
+  //be kinda weird
+  let page_size = usize::min(10, page_lock.len());
+  let num = usize::max(page_size, page_num.into_inner());
+  let start = num - page_size;
+  
+  let response = if start > page_lock.len() {
+    "<p>that's it lol, go do something else with your life</p>".to_string()
+  }
+  else {
+    let end = usize::min(num, page_lock.len());
+    page(&page_lock, start, end).await
+  };
+
   drop(page_lock);
 
-  HttpResponse::Ok().json(page_clone)
+  response
 }
 
 async fn auto_update_read_pages(ip: (&str, u16)) {
@@ -88,44 +125,22 @@ async fn auto_update_read_pages(ip: (&str, u16)) {
   let url = format!("http://{}:{}/readers", ip.0, ip.1);
 
   loop {
-    interval.tick().await;
     let _result = client.post(url.clone()).send().await;
+    interval.tick().await;
   }
 }
 
-/*
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
-  let pages = fs::read_to_string("site_list")?;
-  let rss_pages:Vec<&str> = pages.lines().collect();
-  
-  //let content = File::open("test")?;
-  //let channel = Channel::read_from(BufReader::new(content))?;
-  let mut sites = Vec::<Site>::new();
-  for page in rss_pages {
-    match get_readers(&page).await {
-      Err(_) => (),
-      Ok(mut e) => sites.append(&mut e),
-    }
-  }
+async fn page(sites: &Vec<Site>, start: usize, end: usize) -> String {
+  let mut page = "".to_string();
 
-  //dbg!(sites);
-  for s in sites {
-    println!("{}", s.title);
+  for i in start..end {
+    page = format!("{}\n{}", page, sites[i].html);
   }
-  Ok(())
+  page = format!(r##"{}
+  <div hx-get="/r/{}" hx-trigger="revealed" hx-swap="outerHTML" hx-target="this">
+  </div>
+  "##, page, start + 20);
+
+  page
 }
 
-
-async fn get_readers(pages: &str) -> Result<Vec<Site>, Box<dyn Error>> {
-  let content = reqwest::get(pages).await?.bytes().await?;
-  let channel = Channel::read_from(&content[..])?;
-
-  let mut sites = Vec::<Site>::new();
-  for item in channel.items() {
-    sites.push(Site::new(item));
-  }
-
-  return Ok(sites);
-}
-*/
