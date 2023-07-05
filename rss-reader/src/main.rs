@@ -15,8 +15,39 @@ struct PageData {
   pages: RwLock<Vec<Site>>
 }
 
-static OPENER: &str = r##"<!DOCKTYPE html><html><script src="https://unpkg.com/htmx.org@1.9.2" integrity="sha384-L6OqL9pRWyyFU3+/bjdSri+iIphTN/bvYyM37tICVyOJkWZLpP2vGn6VUEXgzg6h" crossorigin="anonymous"></script><script src="https://unpkg.com/htmx.org@1.9.2" "></script><body>"##;
-static CLOSER: &str = r##"</body></html>"##;
+static OPENER: &str = r##"<!DOCKTYPE html><html><script src="https://unpkg.com/htmx.org@1.9.2" integrity="sha384-L6OqL9pRWyyFU3+/bjdSri+iIphTN/bvYyM37tICVyOJkWZLpP2vGn6VUEXgzg6h" crossorigin="anonymous"></script><script src="https://unpkg.com/htmx.org@1.9.2" "></script>"##;
+static STYLE: &str = r##"<style>
+  .entry {
+    border-radius: 10px; 
+    border: 1px solid #000; 
+    padding: 10px; 
+    margin-bottom: 30px;
+  }
+  .center-column {
+    height: 200px; 
+  }
+
+  @media screen and (min-width: 768px) {
+    .center-column {
+      width: 50%;
+      margin: 0 auto; 
+    }
+  }
+
+  @media screen and (max-width: 767px) {
+    .center-column {
+      width: 100%;
+    }
+  }
+
+  .time {
+    font-size: 0.8em; 
+    color: #999999; 
+  }
+</style>
+"##;
+
+static CLOSER: &str = r##"</html>"##;
 
 //#[actix_web::main]
 #[tokio::main]
@@ -52,11 +83,15 @@ async fn index(data: web::Data<PageData>) -> impl Responder {
   let page_lock = data.pages.read().unwrap();
 
   let pages = page(&page_lock, 0, 10).await;
-  let body = format!(r##"{}
-  <body>
+  let body = format!(r##"
   {}
+  {}
+  <body style="padding: 0; margin: 0;">
+  <div class="center-column">
+  {}
+  </div>
   </body>
-  {}"##, OPENER, pages, CLOSER);
+  {}"##, OPENER, STYLE, pages, CLOSER);
 
   HttpResponse::Ok()
     .content_type("text/html; charset=utf-8")
@@ -77,9 +112,8 @@ async fn update_readers(data: web::Data<PageData>) -> impl Responder {
       Err(_) => (),
     }
   }
-  //println!("{}", sites.len());
+
   sites.sort_by_key(|item| std::cmp::Reverse(item.date));
-  //print!("updated: {:?}", sites); 
 
   HttpResponse::Ok().body("updated")
 }
@@ -138,6 +172,7 @@ async fn page(sites: &Vec<Site>, start: usize, end: usize) -> String {
   }
   page = format!(r##"{}
   <div hx-get="/r/{}" hx-trigger="revealed" hx-swap="outerHTML" hx-target="this">
+    Loading...
   </div>
   "##, page, start + 20);
 

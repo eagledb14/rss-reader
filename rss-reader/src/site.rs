@@ -55,19 +55,17 @@ impl Site {
   }
 
   pub fn create_entry(title: String, description: String, link: String, date: String, comments: String) -> String {
-    
     let mut entry = format!(r##"
-      <div>
+      <div class="entry">
         <h3>
           <a href="{}" target = "_blank">{}</a>
         </h3>
-        <p>{}</p>
+        <p class="time">{}</p>
         <p>{}</p> 
-        <br>
     "##, link, title, date, description);
 
     if comments != "" {
-      entry = format!(r##"{} <a href="{}" target = "_blank">comments</a>"##, entry, comments);
+      entry = format!(r##"{} <a href="{}" target = "_blank">Comments</a>"##, entry, comments);
     }
     entry = format!(r##"{}</div>"##, entry);
 
