@@ -1,5 +1,4 @@
-use chrono::DateTime;
-use std::time::{SystemTime, UNIX_EPOCH};
+use chrono::{Utc, DateTime, FixedOffset};
 use xml::reader::{EventReader, XmlEvent};
 use std::io::{Cursor, BufReader};
 
@@ -11,19 +10,22 @@ pub struct Site {
 }
 
 impl Site {
-  pub fn new(title: String, description: String, link: String, date: String, comments: String) -> Self {
+  pub fn new(title: String, description: String, link: String, mut date: String, comments: String) -> Self {
+    let dt = if let Ok(dt) = DateTime::parse_from_rfc2822(&date) {
+      dt
+    }
+    else if let Ok(dt) = DateTime::parse_from_str(&date, "%Y-%m-%dT%H:%M:%SZ") {
+      dt
+    }
+    else {
+      Utc::now().with_timezone(&FixedOffset::east_opt(0).unwrap())
+    };
+
+    date = dt.format("%b %d %Y, %H:%M:%S").to_string();
+
     Self {
-      html: Site::create_entry(title, description, link, date.clone(), comments),
-      date: if let Ok(dt) = DateTime::parse_from_rfc2822(&date) {
-          dt.timestamp_millis()
-        }
-        else if let Ok(dt) = DateTime::parse_from_str(&date, "%Y-%m-%dT%H:%M:%SZ") {
-          dt.timestamp_millis()
-        }
-        else {
-          let now = SystemTime::now().duration_since(UNIX_EPOCH).expect("time went backwards");
-          now.as_millis() as i64
-        }
+      html: Site::create_entry(title, description, link, date, comments),
+      date: dt.timestamp_millis()
     }
   }
 
