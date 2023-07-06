@@ -14,13 +14,16 @@ impl Site {
   pub fn new(title: String, description: String, link: String, date: String, comments: String) -> Self {
     Self {
       html: Site::create_entry(title, description, link, date.clone(), comments),
-      date: match DateTime::parse_from_rfc2822(&date) {
-        Ok(dt) => dt.timestamp_millis(),
-        Err(_) => {
+      date: if let Ok(dt) = DateTime::parse_from_rfc2822(&date) {
+          dt.timestamp_millis()
+        }
+        else if let Ok(dt) = DateTime::parse_from_str(&date, "%Y-%m-%dT%H:%M:%SZ") {
+          dt.timestamp_millis()
+        }
+        else {
           let now = SystemTime::now().duration_since(UNIX_EPOCH).expect("time went backwards");
           now.as_millis() as i64
         }
-      },
     }
   }
 

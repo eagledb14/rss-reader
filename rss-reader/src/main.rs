@@ -119,12 +119,6 @@ async fn update_readers(data: web::Data<PageData>) -> impl Responder {
 
 async fn get_read_pages(pages: &str) -> Result<Vec<Site>, Box<dyn Error>> {
   let content = reqwest::get(pages).await?.bytes().await?;
-  //let channel = Channel::read_from(&content[..])?;
-
-  //let mut sites = Vec::<Site>::new();
-  // for item in channel.items() {
-  //   sites.push(Site::new(item));
-  // }
 
   return Ok(parse_xml(content.to_vec()))
 }
