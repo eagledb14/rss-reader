@@ -1,8 +1,7 @@
 mod site;
 
 use std::fs;
-use rss::Channel;
-use site::Site;
+use site::{Site, parse_xml};
 use std::error::Error;
 use actix_web::{get, post, web, App, HttpServer, HttpResponse, Responder};
 use std::sync::RwLock;
@@ -50,7 +49,6 @@ static STYLE: &str = r##"<style>
 
 static CLOSER: &str = r##"</html>"##;
 
-//#[actix_web::main]
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
   const IP: (&str, u16) = ("127.0.0.1", 8080);
@@ -110,7 +108,7 @@ async fn update_readers(data: web::Data<PageData>) -> impl Responder {
   for page in rss_pages {
     match get_read_pages(&page).await {
       Ok(mut e) => sites.append(&mut e),
-      Err(_) => (),
+      Err(e) => println!("{}: {}", e, &page),
     }
   }
 
@@ -121,14 +119,14 @@ async fn update_readers(data: web::Data<PageData>) -> impl Responder {
 
 async fn get_read_pages(pages: &str) -> Result<Vec<Site>, Box<dyn Error>> {
   let content = reqwest::get(pages).await?.bytes().await?;
-  let channel = Channel::read_from(&content[..])?;
+  //let channel = Channel::read_from(&content[..])?;
 
-  let mut sites = Vec::<Site>::new();
-  for item in channel.items() {
-    sites.push(Site::new(item));
-  }
+  //let mut sites = Vec::<Site>::new();
+  // for item in channel.items() {
+  //   sites.push(Site::new(item));
+  // }
 
-  return Ok(sites);
+  return Ok(parse_xml(content.to_vec()))
 }
 
 #[get("/r/{page_num}")]
