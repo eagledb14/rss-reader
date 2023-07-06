@@ -14,11 +14,11 @@ impl Site {
     let dt = if let Ok(dt) = DateTime::parse_from_rfc2822(&date) {
       dt
     }
-    else if let Ok(dt) = DateTime::parse_from_str(&date, "%Y-%m-%dT%H:%M:%SZ") {
+    else if let Ok(dt) = DateTime::parse_from_rfc3339(&date) {
       dt
     }
     else {
-      Utc::now().with_timezone(&FixedOffset::east_opt(0).unwrap())
+      Utc::now().with_timezone(&FixedOffset::east_opt(-1).unwrap())
     };
 
     date = dt.format("%b %d %Y, %H:%M:%S").to_string();
@@ -73,9 +73,6 @@ pub fn parse_xml(xml_content: Vec<u8>) -> Vec<Site> {
   for event in reader {
     match event {
       Ok(XmlEvent::StartElement { name, ..}) => {
-        //skip the rss metadata
-        // if entry == "channel" && name.to_string() != "item" {
-        //   continue;
         entry = name.to_string().split("}").last().unwrap_or(&"").to_string();
       }
       Ok(XmlEvent::Characters(param)) => {
@@ -86,6 +83,7 @@ pub fn parse_xml(xml_content: Vec<u8>) -> Vec<Site> {
       }
       Ok(XmlEvent::EndElement { name }) => {
         let name = name.to_string().split("}").last().unwrap_or(&"").to_string();
+
         //push item to list if it is finished
         if name == "item"  || name == "entry" {
           site_list.push(site_builder.build());
@@ -108,7 +106,7 @@ fn update_builder(entry: &str, param: String, site_builder: &mut SiteBuilder) {
     "title" => site_builder.title = param,
     "link" | "id" => site_builder.link = param,
     "description" | "summary" => site_builder.description = param,
-    "pubDate" | "updated" => site_builder.date = param,
+    "pubDate" | "published" | "updated" => site_builder.date = param,
     "comments" => site_builder.comments = param,
     _ => ()
   }
