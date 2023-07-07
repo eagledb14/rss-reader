@@ -97,7 +97,6 @@ pub fn parse_xml(xml_content: Vec<u8>) -> Vec<Site> {
     }
   }
 
-  println!("{:?}", site_list.len());
   return site_list;
 }
 
