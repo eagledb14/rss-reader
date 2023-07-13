@@ -25,20 +25,18 @@ impl Site {
 
     Self {
       html: Site::create_entry(title, description, link, date, comments),
-      date: dt.timestamp_millis()
+      date: dt.timestamp_millis(),
     }
   }
 
-
-  pub fn create_entry(title: String, description: String, link: String, date: String, comments: String) -> String {
+  pub fn create_entry(title: String, _description: String, link: String, date: String, comments: String) -> String {
     let mut entry = format!(r##"
       <div class="entry">
         <h3>
           <a href="{}">{}</a>
         </h3>
         <p class="time">{}</p>
-        <p>{}</p> 
-    "##, link, title, date, description);
+    "##, link, title, date);
 
     if comments != "" {
       entry = format!(r##"{} <a href="{}">Comments</a>"##, entry, comments);

@@ -114,6 +114,7 @@ async fn update_readers(data: web::Data<PageData>) -> impl Responder {
 
   sites.sort_by_key(|item| std::cmp::Reverse(item.date));
 
+
   HttpResponse::Ok().body("updated")
 }
 
@@ -147,13 +148,14 @@ async fn get_readers(data: web::Data<PageData>, page_num: web::Path<usize>) -> i
 }
 
 async fn auto_update_read_pages(ip: (&str, u16)) {
-  let mut interval: Interval = interval(Duration::from_secs(3600));
+  let mut interval: Interval = interval(Duration::from_secs(600));
   let client = Client::new();
-  let url = format!("http://{}:{}/readers", ip.0, ip.1);
+  let url = format!("http://{}:{}/r", ip.0, ip.1);
 
   loop {
-    let _result = client.post(url.clone()).send().await;
     interval.tick().await;
+    let result = client.post(url.clone()).send().await;
+    println!("{:?}", result);
   }
 }
 
