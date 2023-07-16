@@ -3,7 +3,7 @@ pub static OPENER: &str = r##"<!DOCKTYPE html><html><script src="https://unpkg.c
 pub static STYLE: &str = r##"<style>
   :root {
     --primary-color: #193A9E;
-    --background-color: #222;
+    --background-color: #151519;
     --text-color: #fff;
     --secondary-color: #999999;
     --border-color: #ffffff;
