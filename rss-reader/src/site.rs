@@ -34,9 +34,9 @@ impl Site {
       <div class="entry">
         <h3>
           <a href="{}">{}</a>
-          <span class="time">{}</span>
+          <span class="sub-heading">({})</span>
         </h3>
-        <p class="time">{}</p>
+        <p class="sub-heading">{}</p>
     "##, link, title, origin, date);
 
     if comments != "" {

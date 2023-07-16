@@ -52,7 +52,7 @@ async fn index(data: web::Data<PageData>) -> impl Responder {
   let body = format!(r##"
   {}
   {}
-  <body style="padding: 0; margin: 0;">
+  <body>
   {}
   <div class="center-column">
   {}
@@ -91,7 +91,7 @@ async fn update_readers(data: web::Data<PageData>) -> impl Responder {
 async fn get_read_pages(pages: &str) -> Result<Vec<Site>, Box<dyn Error>> {
   let content = reqwest::get(pages).await?.bytes().await?;
 
-  return Ok(parse_xml(content.to_vec(), pages.to_string()))
+  return Ok(parse_xml(content.to_vec(), pages.split("/").collect::<Vec<_>>()[2].to_string()))
 }
 
 #[get("/r/{page_num}")]

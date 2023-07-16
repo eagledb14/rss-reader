@@ -1,12 +1,28 @@
 pub static OPENER: &str = r##"<!DOCKTYPE html><html><script src="https://unpkg.com/htmx.org@1.9.2" integrity="sha384-L6OqL9pRWyyFU3+/bjdSri+iIphTN/bvYyM37tICVyOJkWZLpP2vGn6VUEXgzg6h" crossorigin="anonymous"></script><script src="https://unpkg.com/htmx.org@1.9.2" "></script>"##;
 
 pub static STYLE: &str = r##"<style>
-  .entry {
-    border-radius: 10px; 
-    border: 1px solid #ccc;
-    padding: 10px; 
-    margin-bottom: 30px;
+  :root {
+    --primary-color: #193A9E;
+    --background-color: #222;
+    --text-color: #fff;
+    --secondary-color: #999999;
+    --border-color: #ffffff;
   }
+  
+  * {
+    margin: 0px;
+    padding: 0px;
+  }
+
+  .entry {
+    position: relative;
+    border-radius: 10px; 
+    border: 1px solid var(--border-color);
+    padding: 25px 25px 15px 25px;
+    margin-bottom: 25px;
+    background-color: var(--background-color);
+  }
+
   .center-column {
     height: 200px; 
   }
@@ -24,14 +40,15 @@ pub static STYLE: &str = r##"<style>
     }
   }
 
-  .time {
+  .sub-heading {
     font-size: 0.8em; 
-    color: #999999; 
+    color: var(--secondary-color); 
+    padding-bottom: 15px;
   }
 
   .header {
-    background-color: #193A9E; 
-    color: white; 
+    background-color: var(--primary-color); 
+    color: var(--text-color); 
     padding: 10px; 
     margin-bottom: 20px; 
     display: flex; 
@@ -43,7 +60,7 @@ pub static STYLE: &str = r##"<style>
   }
 
   .header a {
-    color: white; 
+    color: var(--text-color); 
     text-decoration: none; 
   }
 
@@ -52,21 +69,22 @@ pub static STYLE: &str = r##"<style>
   }
 
   body {
-    background-color: #222; 
-    color: #fff; 
+    background-color: var(--background-color); 
+    color: var(--text-color); 
     margin: 0; 
-    padding: 20px; 
+    padding: 0; 
     font-family: Arial, sans-serif; 
   }
 
   a {
-    color: #fff; 
+    color: var(--text-color); 
     text-decoration: none; 
   }
 
   a:hover {
     text-decoration: underline; 
   }
+
 </style>
 "##;
 
