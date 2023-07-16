@@ -1,4 +1,5 @@
 mod site;
+mod template;
 
 use std::fs;
 use site::{Site, parse_xml};
@@ -8,46 +9,12 @@ use std::sync::RwLock;
 use std::time::Duration;
 use tokio::time::{interval, Interval};
 use reqwest::Client;
-
+use std::time::Instant;
+use template::*;
 
 struct PageData {
   pages: RwLock<Vec<Site>>
 }
-
-static OPENER: &str = r##"<!DOCKTYPE html><html><script src="https://unpkg.com/htmx.org@1.9.2" integrity="sha384-L6OqL9pRWyyFU3+/bjdSri+iIphTN/bvYyM37tICVyOJkWZLpP2vGn6VUEXgzg6h" crossorigin="anonymous"></script><script src="https://unpkg.com/htmx.org@1.9.2" "></script>"##;
-
-static STYLE: &str = r##"<style>
-  .entry {
-    border-radius: 10px; 
-    border: 1px solid #000; 
-    padding: 10px; 
-    margin-bottom: 30px;
-  }
-  .center-column {
-    height: 200px; 
-  }
-
-  @media screen and (min-width: 768px) {
-    .center-column {
-      width: 50%;
-      margin: 0 auto; 
-    }
-  }
-
-  @media screen and (max-width: 767px) {
-    .center-column {
-      width: 100%;
-    }
-  }
-
-  .time {
-    font-size: 0.8em; 
-    color: #999999; 
-  }
-</style>
-"##;
-
-static CLOSER: &str = r##"</html>"##;
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
@@ -86,11 +53,12 @@ async fn index(data: web::Data<PageData>) -> impl Responder {
   {}
   {}
   <body style="padding: 0; margin: 0;">
+  {}
   <div class="center-column">
   {}
   </div>
   </body>
-  {}"##, OPENER, STYLE, pages, CLOSER);
+  {}"##, OPENER, STYLE, HEADER, pages, CLOSER);
 
   HttpResponse::Ok()
     .content_type("text/html; charset=utf-8")
@@ -99,8 +67,9 @@ async fn index(data: web::Data<PageData>) -> impl Responder {
 
 #[post("/r")]
 async fn update_readers(data: web::Data<PageData>) -> impl Responder {
+  let now = Instant::now();
   let pages = fs::read_to_string("site_list").unwrap();
-  let rss_pages:Vec<&str> = pages.lines().collect();
+  let rss_pages: Vec<&str> = pages.lines().collect();
 
   let mut sites = data.pages.write().unwrap();
   sites.clear();
@@ -114,6 +83,7 @@ async fn update_readers(data: web::Data<PageData>) -> impl Responder {
 
   sites.sort_by_key(|item| std::cmp::Reverse(item.date));
 
+  println!("{:?}", now.elapsed());
 
   HttpResponse::Ok().body("updated")
 }
@@ -121,7 +91,7 @@ async fn update_readers(data: web::Data<PageData>) -> impl Responder {
 async fn get_read_pages(pages: &str) -> Result<Vec<Site>, Box<dyn Error>> {
   let content = reqwest::get(pages).await?.bytes().await?;
 
-  return Ok(parse_xml(content.to_vec()))
+  return Ok(parse_xml(content.to_vec(), pages.to_string()))
 }
 
 #[get("/r/{page_num}")]
@@ -154,8 +124,7 @@ async fn auto_update_read_pages(ip: (&str, u16)) {
 
   loop {
     interval.tick().await;
-    let result = client.post(url.clone()).send().await;
-    println!("{:?}", result);
+    _ = client.post(url.clone()).send().await;
   }
 }
 

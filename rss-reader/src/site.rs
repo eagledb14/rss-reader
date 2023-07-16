@@ -10,7 +10,7 @@ pub struct Site {
 }
 
 impl Site {
-  pub fn new(title: String, description: String, link: String, mut date: String, comments: String) -> Self {
+  pub fn new(title: String, description: String, link: String, mut date: String, comments: String, origin: String) -> Self {
     let dt = if let Ok(dt) = DateTime::parse_from_rfc2822(&date) {
       dt
     }
@@ -24,19 +24,20 @@ impl Site {
     date = dt.format("%b %d %Y, %H:%M:%S").to_string();
 
     Self {
-      html: Site::create_entry(title, description, link, date, comments),
+      html: Site::create_entry(title, description, link, date, comments, origin),
       date: dt.timestamp_millis(),
     }
   }
 
-  pub fn create_entry(title: String, _description: String, link: String, date: String, comments: String) -> String {
+  pub fn create_entry(title: String, _description: String, link: String, date: String, comments: String, origin: String) -> String {
     let mut entry = format!(r##"
       <div class="entry">
         <h3>
           <a href="{}">{}</a>
+          <span class="time">{}</span>
         </h3>
         <p class="time">{}</p>
-    "##, link, title, date);
+    "##, link, title, origin, date);
 
     if comments != "" {
       entry = format!(r##"{} <a href="{}">Comments</a>"##, entry, comments);
@@ -53,21 +54,24 @@ struct SiteBuilder {
   description: String,
   link: String,
   date: String,
-  comments: String
+  comments: String,
+  origin: String
 }
 
 impl SiteBuilder {
   pub fn build(self) -> Site {
-    Site::new(self.title, self.description, self.link, self.date, self.comments)
+    Site::new(self.title, self.description, self.link, self.date, self.comments, self.origin)
   }
 }
 
-pub fn parse_xml(xml_content: Vec<u8>) -> Vec<Site> {
+pub fn parse_xml(xml_content: Vec<u8>, url: String) -> Vec<Site> {
   let reader = EventReader::new(BufReader::new(Cursor::new(xml_content)));
   let mut site_list = Vec::<Site>::new();
 
   let mut entry = "".to_string();
   let mut site_builder = SiteBuilder::default();
+  site_builder.origin = url.clone();
+
   for event in reader {
     match event {
       Ok(XmlEvent::StartElement { name, ..}) => {
@@ -86,6 +90,7 @@ pub fn parse_xml(xml_content: Vec<u8>) -> Vec<Site> {
         if name == "item"  || name == "entry" {
           site_list.push(site_builder.build());
           site_builder = SiteBuilder::default();
+          site_builder.origin = url.clone();
         }
       }
       Err(e) => {
