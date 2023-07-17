@@ -72,7 +72,8 @@ pub static STYLE: &str = r##"<style>
   .nav-links a {
     color: var(--text-color); 
     text-decoration: none; 
-    margin-right: 10px; // to add some space between the links
+    margin-right: 10px; 
+    cursor: pointer;
   }
 
   body {
@@ -121,7 +122,7 @@ pub static STYLE: &str = r##"<style>
 pub static HEADER: &str = r##"<div class="header">
   <div class="nav-links"hx-target="#center-column" hx-swap="outerHTML" >
     <a hx-get="/m">Rustss</a>
-    <a hx-get="/u" hx-push-url=true>Add</a>
+    <a hx-get="/u">Add</a>
   </div>
 </div>
 "##;
