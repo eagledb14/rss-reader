@@ -7,6 +7,9 @@ pub static STYLE: &str = r##"<style>
     --text-color: #fff;
     --secondary-color: #999999;
     --border-color: #ffffff;
+    --input-background-color: #222222;
+    --button-background-color: var(--primary-color); 
+    --button-text-color: var(--text-color);
   }
   
   * {
@@ -24,7 +27,9 @@ pub static STYLE: &str = r##"<style>
   }
 
   .center-column {
-    height: 200px; 
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
   }
 
   @media screen and (min-width: 768px) {
@@ -64,8 +69,10 @@ pub static STYLE: &str = r##"<style>
     text-decoration: none; 
   }
 
-  .header a:hover {
-    text-decoration: underline; 
+  .nav-links a {
+    color: var(--text-color); 
+    text-decoration: none; 
+    margin-right: 10px; // to add some space between the links
   }
 
   body {
@@ -85,11 +92,37 @@ pub static STYLE: &str = r##"<style>
     text-decoration: underline; 
   }
 
+  form {
+    margin-bottom: 10px;
+  }
+
+  input[type="text"] {
+    background-color: var(--input-background-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    padding: 8px;
+    border-radius: 5px;
+    width: 100%;
+    margin-bottom: 10px; /* Optional margin-bottom for spacing */
+  }
+
+  button[type="submit"] {
+    background-color: var(--button-background-color);
+    color: var(--button-text-color);
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+
 </style>
 "##;
 
 pub static HEADER: &str = r##"<div class="header">
-  Header Bar
+  <div class="nav-links"hx-target="#center-column" hx-swap="outerHTML" >
+    <a hx-get="/m">Rustss</a>
+    <a hx-get="/u" hx-push-url=true>Add</a>
+  </div>
 </div>
 "##;
 

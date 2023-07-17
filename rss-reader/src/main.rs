@@ -11,9 +11,17 @@ use tokio::time::{interval, Interval};
 use reqwest::Client;
 use std::time::Instant;
 use template::*;
+use std::fs::OpenOptions;
+use std::io::prelude::*;
+use serde::Deserialize;
 
 struct PageData {
   pages: RwLock<Vec<Site>>
+}
+
+#[derive(Deserialize)]
+struct UpdateForm {
+  new_url: String
 }
 
 #[tokio::main]
@@ -33,6 +41,9 @@ async fn main() -> std::io::Result<()> {
       .service(greet)
       .service(update_readers)
       .service(get_readers)
+      .service(update_site_list)
+      .service(get_update_page)
+      .service(get_center_feed)
   })
   .bind(IP)?
   .run()
@@ -46,24 +57,29 @@ async fn greet(name: web::Path<String>) -> impl Responder {
 
 #[get("/")]
 async fn index(data: web::Data<PageData>) -> impl Responder {
-  let page_lock = data.pages.read().unwrap();
 
-  let pages = page(&page_lock, 0, 10).await;
   let body = format!(r##"
   {}
   {}
   <body>
   {}
-  <div class="center-column">
-  {}
-  </div>
+  <div hx-get="/m" hx-target="this" hx-swap="outerHTML" hx-trigger="load"></div>
   </body>
-  {}"##, OPENER, STYLE, HEADER, pages, CLOSER);
+  {}"##, OPENER, STYLE, HEADER, CLOSER);
 
   HttpResponse::Ok()
     .content_type("text/html; charset=utf-8")
     .body(body)
 }
+
+#[get("/m")]
+async fn get_center_feed(data: web::Data<PageData>) -> impl Responder {
+  let page_lock = data.pages.read().unwrap();
+  let pages = page(&page_lock, 0, 10).await;
+
+  format!("<div class=center-column id=center-column> {} </div>", pages)
+}
+
 
 #[post("/r")]
 async fn update_readers(data: web::Data<PageData>) -> impl Responder {
@@ -141,5 +157,34 @@ async fn page(sites: &Vec<Site>, start: usize, end: usize) -> String {
   "##, page, start + 20);
 
   page
+}
+
+#[get("/u")]
+async fn get_update_page() -> impl Responder {
+  format!(r##"
+  <div class=center-column id=center-column>
+    <div class="entry">
+      <form hx-post="/u" id="update-form" hx-swap="afterend">
+        <div>
+          <label for="text">Add new URL to reading list</label>
+          <input type="text" name="new_url" placeholder="Enter new URL">
+          <button type="submit">Submit</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  "##)
+}
+
+#[post("/u")]
+async fn update_site_list(site: web::Form<UpdateForm>) -> impl Responder {
+  let mut file = OpenOptions::new()
+    .append(true)
+    .open("site_list")
+    .expect("Failed to open the file");
+
+  writeln!(file, "{}", site.new_url).expect("it didn't write the file");
+
+  format!("Added: {}", site.new_url)
 }
 
