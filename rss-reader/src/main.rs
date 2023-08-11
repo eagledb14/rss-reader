@@ -57,7 +57,6 @@ async fn greet(name: web::Path<String>) -> impl Responder {
 
 #[get("/")]
 async fn index(data: web::Data<PageData>) -> impl Responder {
-
   let body = format!(r##"
   {}
   {}
